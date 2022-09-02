@@ -1,6 +1,6 @@
 ### Environment & setup
 ```bash
-git clone https://github.com/cmstas/NanoTools
+git clone https://github.com/kdownham/WWZLooper
 cd NanoTools/
 cd /cvmfs/cms.cern.ch/slc6_amd64_gcc700/cms/cmssw/CMSSW_10_2_9/ ; cmsenv ; cd -
 cd NanoCORE
