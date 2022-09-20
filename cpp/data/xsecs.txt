@@ -1,0 +1,11 @@
+sample          xsection (fb)      
+WWZ             0.1651             
+ZZ              1.256              
+ZZContTo2e2mu   0.005423           
+ZZContTo2e2tau  0.005423	   
+ZZContTo2mu2tau 0.005423 	   	
+ZZContTo4mu     0.002703            
+ZZContTo4e      0.002703	   
+ZZContTo4tau    0.002703	   
+ZZTo2L2Nu       0.5644             
+ZZTo2Q2L        3.221              
