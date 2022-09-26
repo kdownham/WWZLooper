@@ -39,13 +39,17 @@ using namespace tas;
 
 int ScanChain(TChain *ch) {
 
-    TFile* f1 = new TFile("output_skimTest.root", "RECREATE");
+    TFile* f1 = new TFile("skimCheck_output/output_skimTest.root", "RECREATE");
     //float pt = 0;
     //TTree tree_out("tree","");
     //tree_out.Branch("pt", &pt);
-    H1(isSkim,2,0,1);
+    //H1(isSkim,2,0,1);
 
     int nEventsTotal = 0;
+    int nEventsPassing = 0;
+    int nEventsFourMu = 0;
+    int nEventsTwoMuTwoEl = 0;
+    int nEventsFourEl = 0;
     int nEventsChain = ch->GetEntries();
     TFile *currentFile = 0;
     TObjArray *listOfFiles = ch->GetListOfFiles();
@@ -71,7 +75,7 @@ int ScanChain(TChain *ch) {
 
             nEventsTotal++;
             bar.progress(nEventsTotal, nEventsChain);
-	    bool isSkimEvent = false;
+	    //bool isSkimEvent = false;
             int nCand_leps = 0;
             int nCand_mu = 0;
 	    int nCand_ele = 0;
@@ -87,17 +91,22 @@ int ScanChain(TChain *ch) {
 
             // Do the same with electrons
             for ( int k = 0; k < nt.nElectron(); k++ ){
-		 if ( (nt.Electron_pt().at(k) > 10.) ) continue;
+		 if ( !(nt.Electron_pt().at(k) > 10.) ) continue;
 		 if ( !(std::abs(nt.Electron_eta().at(k)) < 2.5) ) continue;
 		 if ( !nt.Electron_mvaFall17V2noIso_WPL().at(k) ) continue;
-		 if ( !(nt.Electron_pfRelIso03_all().at(k) > 0.4) ) continue;
+		 if ( !(nt.Electron_pfRelIso03_all().at(k) < 0.4) ) continue;
 		 nCand_ele++;
 	    }
 
 	    nCand_leps = nCand_mu + nCand_ele;
-	    if ( nCand_leps >= 4 ) isSkimEvent = true;
+	    if ( nCand_leps < 4 ) continue;
+	    nEventsPassing++;
 
-	    h_isSkim->Fill(isSkimEvent);
+	    if ( nCand_mu > 3 ) nEventsFourMu++;
+	    if ( nCand_ele > 3 ) nEventsFourEl++;
+	    if ( nCand_mu > 1 && nCand_ele > 1 ) nEventsTwoMuTwoEl++;
+
+	    //h_isSkim->Fill(isSkimEvent);
 
         } // Event loop
 
@@ -105,7 +114,13 @@ int ScanChain(TChain *ch) {
 
 
     } // File loop
+
     bar.finish();
+
+    std::cout << nEventsPassing << " events passed skim requirements, out of " << nEventsTotal << " total events" << endl;
+    std::cout << "Number of events with at least 4 candidate muons = " << nEventsFourMu << endl;
+    std::cout << "Number of events with at least 4 candidate electrons = " << nEventsFourEl << endl;
+    std::cout << "Number of events with at least 2 candidate muons and 2 candidate electrons = " << nEventsTwoMuTwoEl << endl;
 
     f1->Write();
     f1->Close();
