@@ -89,9 +89,14 @@ std::vector<pair<int,int>> get_W_cands(bool is_ee, std::vector<pair<int,int>> Z_
            for ( int k = 0; k < mu_W_cands.size(); k++ ){
                     W_cand.emplace_back(mu_W_cands[k],Muon_pdgId().at(mu_W_cands[k])); 
                 }
+      }
+      if ( el_W_cands.size() == 0 && mu_W_cands.size() > 0 ){
+	   for ( int k = 0; k < mu_W_cands.size(); k++ ){
+                    W_cand.emplace_back(mu_W_cands[k],Muon_pdgId().at(mu_W_cands[k]));
+           }
       }    
    }
-   else{ 
+   if ( !is_ee ){ 
      if ( mu_W_cands.size() > 0 && el_W_cands.size() == 0 ){
 	  for ( int p = 0; p < Z_cand_vector.size(); p++ ){
 	        for ( int q = 0; q < mu_W_cands.size(); q++ ){
@@ -110,6 +115,11 @@ std::vector<pair<int,int>> get_W_cands(bool is_ee, std::vector<pair<int,int>> Z_
           for ( int r = 0; r < el_W_cands.size(); r++ ){
 		W_cand.emplace_back(el_W_cands[r],Electron_pdgId().at(el_W_cands[r]));
 	  }
+     }
+     if ( mu_W_cands.size() == 0 && el_W_cands.size() > 0 ){
+	  for ( int r = 0; r < el_W_cands.size(); r++ ){
+                W_cand.emplace_back(el_W_cands[r],Electron_pdgId().at(el_W_cands[r]));
+          }
      }
 
    }

@@ -6,11 +6,17 @@
 #include "TTreeCache.h"
 #include "TTreeCacheUnzip.h"
 #include "TTreePerfStats.h"
+#include "TLorentzVector.h"
+#include <math.h>
+//#include "Math/GenVector/Boost.h"
+#include "Math/Boost.h"
+
 
 #include "../NanoCORE/Nano.h"
 #include "../NanoCORE/Base.h"
 #include "../NanoCORE/tqdm.h"
 #include "../NanoCORE/WWZSelections.h"
+#include "../NanoCORE/lester_mt2_bisect.h"
 
 #include <iostream>
 #include <iomanip>
@@ -42,18 +48,22 @@ int ScanChain(TChain *ch, TString process, TString year, double xsec, double Gen
 
     std::cout << "Process = " << process << " , year = " << year << " , cross section (fb) = " << xsec << " , genEventSumw = " << GenEventSumw << std::endl;
 
-    TFile* f1 = new TFile("output/output_"+process+".root", "RECREATE");
+    TFile* f1 = new TFile("output/output_"+process+"_"+year+".root", "RECREATE");
 
     // define kinematic variables for tree
     short sel_mask = 0;  // selection bitmask to keep track of cuts
-    float pt_l_Z1 = 0.;  // pT of leading Z candidate lepton
-    float pt_l_Z2 = 0.;  // pT of subleading Z candidate lepton
-    float pt_l_W1 = 0.;  // pT of leading W candidate lepton
-    float pt_l_W2 = 0.;  // pT of subleading W candidate lepton
-    double evt_weight = 0.;  // per-event weight
-    float m_ll = 0.; // invariant mass of Z candidate leptons 
-    bool opp_flav = false;
-    bool same_flav = true;
+    double pt_l_Z1;  // pT of leading Z candidate lepton
+    double pt_l_Z2;  // pT of subleading Z candidate lepton
+    double pt_l_W1;  // pT of leading W candidate lepton
+    double pt_l_W2;  // pT of subleading W candidate lepton
+    double evt_weight;  // per-event weight
+    double m_ll; // invariant mass of Z candidate leptons 
+    bool opp_flav;
+    bool same_flav;
+    double MT2;
+    double MET_px;
+    double MET_py;
+    double MET;
 
     double sumOfEventWeights = 0.;
     double sumSQEventWeights = 0.;
@@ -94,8 +104,12 @@ int ScanChain(TChain *ch, TString process, TString year, double xsec, double Gen
     tree_out.Branch("pt_l_W2",&pt_l_W2);
     tree_out.Branch("evt_weight",&evt_weight);
     tree_out.Branch("m_ll",&m_ll);
+    tree_out.Branch("MT2",&MT2);
     tree_out.Branch("opp_flav",&opp_flav);
     tree_out.Branch("same_flav",&same_flav);
+    tree_out.Branch("MET_px",&MET_px);
+    tree_out.Branch("MET_py",&MET_py);
+    tree_out.Branch("MET",&MET);
 
     int nEventsTotal = 0;
     int nEventsChain = ch->GetEntries();
@@ -108,7 +122,7 @@ int ScanChain(TChain *ch, TString process, TString year, double xsec, double Gen
     double lumi = 0.;
     if ( year == "2016" ) lumi = 35.9;
     if ( year == "2017" ) lumi = 41.3;
-    if ( year == "2018" ) lumi = 136.9;			// 59.7 is actual value 
+    if ( year == "2018" ) lumi = 59.8;         //136.9;			// 59.7 is actual value 
 
     double factor;
 
@@ -133,6 +147,14 @@ int ScanChain(TChain *ch, TString process, TString year, double xsec, double Gen
 
             nt.GetEntry(event);
             tree->LoadTree(event);
+
+	    bool triggerReqs = false;
+
+	    if ( year == "2016" ) triggerReqs = (nt.HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL() || nt.HLT_Ele23_Ele12_CaloIdL_TrackIdL_IsoVL_DZ() || nt.HLT_Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_DZ() || nt.HLT_Mu8_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ());
+	    if ( year == "2017" ) triggerReqs = (nt.HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ() || nt.HLT_Ele23_Ele12_CaloIdL_TrackIdL_IsoVL() | nt.HLT_Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_DZ() || nt.HLT_Mu8_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ() || nt.HLT_Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_DZ() || nt.HLT_Mu8_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ());
+	    if ( year == "2018" ) triggerReqs = (nt.HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_Mass3p8() || nt.HLT_Ele23_Ele12_CaloIdL_TrackIdL_IsoVL() || nt.HLT_Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_DZ() || nt.HLT_Mu8_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ());
+
+	    if (!triggerReqs) continue;
 
             nEventsTotal++;
             bar.progress(nEventsTotal, nEventsChain);
@@ -303,27 +325,37 @@ int ScanChain(TChain *ch, TString process, TString year, double xsec, double Gen
             bool Z_mm = false;
 	    bool Z_ee = false;
 
-	    double mll = 0.;
+	    double mll;
 
-	    
+	    double px_l_Z1, py_l_Z1, px_l_Z2, py_l_Z2;
 
 	    if ( Z_cands_mu.size() > 0 && Z_cands_el.size() == 0 ){ 
 		 sumZ_mm_EventWeights += evt_weight;
 		 Z_mm = true;
 		 pt_l_Z1 = nt.Muon_pt().at(Z_cands_mu[0].first);
+		 px_l_Z1 = nt.Muon_p4().at(Z_cands_mu[0].first).Px();
+		 py_l_Z1 = nt.Muon_p4().at(Z_cands_mu[0].first).Py();
 		 pt_l_Z2 = nt.Muon_pt().at(Z_cands_mu[0].second);
+		 px_l_Z2 = nt.Muon_p4().at(Z_cands_mu[0].second).Px();
+                 py_l_Z2 = nt.Muon_p4().at(Z_cands_mu[0].second).Py();
 		 mll = (nt.Muon_p4().at(Z_cands_mu[0].first)+nt.Muon_p4().at(Z_cands_mu[0].second)).M();
             }
 	    if ( Z_cands_el.size() > 0 && Z_cands_mu.size() == 0 ){ 
 		 sumZ_ee_EventWeights += evt_weight;	 
 		 Z_ee = true;
 		 pt_l_Z1 = nt.Electron_pt().at(Z_cands_el[0].first);
+		 px_l_Z1 = nt.Electron_p4().at(Z_cands_el[0].first).Px();
+                 py_l_Z1 = nt.Electron_p4().at(Z_cands_el[0].first).Py();
 		 pt_l_Z2 = nt.Electron_pt().at(Z_cands_el[0].second);
+		 px_l_Z2 = nt.Electron_p4().at(Z_cands_el[0].second).Px();
+                 py_l_Z2 = nt.Electron_p4().at(Z_cands_el[0].second).Py();
 		 mll = (nt.Electron_p4().at(Z_cands_el[0].first)+nt.Electron_p4().at(Z_cands_el[0].second)).M();
 	    }
 	    if ( !(Z_mm) && !(Z_ee) ) continue;
 	    
 	    m_ll = mll;
+
+	    if ( std::abs(m_ll - 91.2) > 10. ) continue;
 
 	    sumZEventWeights += evt_weight;
 	  
@@ -332,8 +364,8 @@ int ScanChain(TChain *ch, TString process, TString year, double xsec, double Gen
             // Now look for the W candidates
 
 	    // Flags for same-flavor, opposite flavor
-	    bool same_flav = false;
-	    bool opp_flav = false;
+	    bool same_flavor = false;
+	    bool opp_flavor = false;
             
 	    std::vector<pair<int,int>> W_cands;
             int W_id_1;
@@ -342,14 +374,14 @@ int ScanChain(TChain *ch, TString process, TString year, double xsec, double Gen
 	    std::vector<int> W_leptons_mu;
 
 	    if ( Z_mm ){
-	       //sumZ_mm_EventWeights += evt_weight;
+	       sumZ_mm_EventWeights += evt_weight;
 	       W_cands = get_W_cands(false, Z_cands_mu, el_W_cand, mu_W_cand);
                if ( Muon_pt().at(Z_cands_mu[0].first) < 25 || Muon_pt().at(Z_cands_mu[0].second) < 15 ) continue; 
 	       if (W_cands.size() < 2) continue;
 	       W_id_1 = W_cands[0].second;
 	       W_id_2 = W_cands[1].second;
 	       if ( W_id_1 + W_id_2 == 0 ){
-	            same_flav = true;
+	            same_flavor = true;
 		    sum_pre_sf_EventWeights += evt_weight;
 		    if ( std::abs(W_id_1) == 13 ){
 			 W_leptons_mu.push_back(W_cands[0].first);
@@ -361,7 +393,7 @@ int ScanChain(TChain *ch, TString process, TString year, double xsec, double Gen
 		    }   
 	       }
 	       if ( std::abs(W_id_1 + W_id_2) == 2 ){
-		    opp_flav = true;
+		    opp_flavor = true;
 		    sum_pre_of_EventWeights += evt_weight;
 		    if ( std::abs(W_id_1) > std::abs(W_id_2) ){
 			 W_leptons_mu.push_back(W_cands[0].first);
@@ -381,7 +413,7 @@ int ScanChain(TChain *ch, TString process, TString year, double xsec, double Gen
 	    if (debug) std::cout << "debug 10" << endl;
 
 	    if ( Z_ee ){
-	       //sumZ_ee_EventWeights += evt_weight;
+	       sumZ_ee_EventWeights += evt_weight;
 	       W_cands = get_W_cands(true, Z_cands_el, el_W_cand, mu_W_cand);
 	       if ( Electron_pt().at(Z_cands_el[0].first) < 25 || Electron_pt().at(Z_cands_el[0].second) < 15 ) continue;
 	       if (debug) std::cout << "debug 10.1" << endl;
@@ -390,7 +422,7 @@ int ScanChain(TChain *ch, TString process, TString year, double xsec, double Gen
                W_id_2 = W_cands[1].second;
 	       if (debug) std::cout << "debug 10.2" << endl;
                if ( W_id_1 + W_id_2 == 0 ){
-                    same_flav = true;
+                    same_flavor = true;
 		    sum_pre_sf_EventWeights += evt_weight;
                     if ( std::abs(W_id_1) == 13 ){
                          W_leptons_mu.push_back(W_cands[0].first);
@@ -403,7 +435,7 @@ int ScanChain(TChain *ch, TString process, TString year, double xsec, double Gen
                }
 	       if (debug) std::cout << "debug 10.3" << endl;
                if ( std::abs(W_id_1 + W_id_2) == 2 ){
-                    opp_flav = true;
+                    opp_flavor = true;
 		    sum_pre_of_EventWeights += evt_weight;
                     if ( std::abs(W_id_1) > std::abs(W_id_2) ){
                          W_leptons_mu.push_back(W_cands[0].first);
@@ -418,9 +450,11 @@ int ScanChain(TChain *ch, TString process, TString year, double xsec, double Gen
                if ( !( (W_id_1 + W_id_2 == 0) || (std::abs(W_id_1+W_id_2) == 2) )) continue;
 	    }
 
+	    same_flav = same_flavor;
+	    opp_flav = opp_flavor;
 
-	    //if (opp_flav) sum_pre_of_EventWeights += evt_weight;
-            //if (same_flav) sum_pre_sf_EventWeights += evt_weight;
+	    if (opp_flav) sum_pre_of_EventWeights += evt_weight;
+            if (same_flav) sum_pre_sf_EventWeights += evt_weight;
 
 	    //sumW_el_EventWeights += evt_weight;
 
@@ -428,39 +462,57 @@ int ScanChain(TChain *ch, TString process, TString year, double xsec, double Gen
 
 	    // W-lepton pt requirements
 	    
-	    bool opposite_flavor = false;
-	    bool same_flavor = false;
+	    //bool opposite_flavor = false;
+	    //bool same_flavor = false;
+
+	    double m_Wcands;
+
+	    LorentzVector p4_l_W1;
+	    LorentzVector p4_l_W2;
 	    
 	    if ( W_leptons_el.size() == 2 && W_leptons_mu.size() == 0 ){
-		 same_flavor = true;
+		 //same_flavor = true;
 		 sumW_ee_EventWeights += evt_weight;
 	         pt_l_W1 = nt.Electron_pt().at(W_leptons_el[0]);
 		 pt_l_W2 = nt.Electron_pt().at(W_leptons_el[1]);
+		 p4_l_W1 = nt.Electron_p4().at(W_leptons_el[0]);
+		 p4_l_W2 = nt.Electron_p4().at(W_leptons_el[1]);
+		 m_Wcands = (nt.Electron_p4().at(W_leptons_el[0])+nt.Electron_p4().at(W_leptons_el[1])).M();
 		 if ( pt_l_W1 < 25 || pt_l_W2 < 15 ) continue;	 
 	    }
 
 	    if ( W_leptons_mu.size() == 2 && W_leptons_el.size() == 0 ){
-		 same_flavor = true;
+		 //same_flavor = true;
 		 sumW_mm_EventWeights += evt_weight;
 		 pt_l_W1 = nt.Muon_pt().at(W_leptons_mu[0]);
 		 pt_l_W2 = nt.Muon_pt().at(W_leptons_mu[1]);
+		 p4_l_W1 = nt.Muon_p4().at(W_leptons_mu[0]);
+		 p4_l_W2 = nt.Muon_p4().at(W_leptons_mu[1]);
+		 m_Wcands = (nt.Muon_p4().at(W_leptons_mu[0])+nt.Muon_p4().at(W_leptons_mu[1])).M();
 		 if ( pt_l_W1 < 25 || pt_l_W2 < 15 ) continue;
 	    }
             
 	    if ( W_leptons_el.size() == 1 && W_leptons_mu.size() == 1 ){
-		 opposite_flavor = true;
+		 //opposite_flavor = true;
 		 sumW_em_EventWeights += evt_weight;
                  pt_l_W1 = std::max(nt.Muon_pt().at(W_leptons_mu[0]),nt.Electron_pt().at(W_leptons_el[0]));
 		 pt_l_W2 = std::min(nt.Muon_pt().at(W_leptons_mu[0]),nt.Electron_pt().at(W_leptons_el[0]));
+		 m_Wcands = (nt.Muon_p4().at(W_leptons_mu[0])+nt.Electron_p4().at(W_leptons_el[0])).M();
+		 if ( nt.Muon_pt().at(W_leptons_mu[0]) > nt.Electron_pt().at(W_leptons_el[0])){
+		      p4_l_W1 = nt.Muon_p4().at(W_leptons_mu[0]);
+		      p4_l_W2 = nt.Electron_p4().at(W_leptons_el[0]);
+		 }
+		 if ( nt.Muon_pt().at(W_leptons_mu[0]) < nt.Electron_pt().at(W_leptons_el[0])){
+                      p4_l_W2 = nt.Muon_p4().at(W_leptons_mu[0]);
+                      p4_l_W1 = nt.Electron_p4().at(W_leptons_el[0]);
+                 }
 		 if ( pt_l_W1 < 25 || pt_l_W2 < 15 ) continue;
 	    }
 
-	    opp_flav = opposite_flavor;
-	    same_flav = same_flavor;
             
             if (debug) std::cout << "debug 12" << endl;
 ///////////////b-tagged-jet veto////////////////////////////////////////////////////////////////////////////
-
+	    
 	    int nBjets = 0;
 	    for (int jet_idx = 0; jet_idx < nt.nJet(); jet_idx++){
 		 if ( nt.Jet_btagDeepB().at(jet_idx) > 0.1208 && nt.Jet_pt().at(jet_idx) > 20. ){
@@ -468,26 +520,74 @@ int ScanChain(TChain *ch, TString process, TString year, double xsec, double Gen
 		 }
 	    }	  
 
-	    if (nBjets > 0) continue; 
+	    if (nBjets > 0) continue;
+	    
 
 ///////////////signal region definitions//////////////////////////////////////////////////////////////////// 
+	    //TLorentzVector p4_lepW1(p4_l_W1.E(),p4_l_W1.Px(),p4_l_W1.Py(),p4_l_W1.Pz());
+	    //TLorentzVector p4_lepW2(p4_l_W2.E(),p4_l_W2.Px(),p4_l_W2.Py(),p4_l_W2.Pz());
 
 	    // Construct MT2 variable
+	    double mVisA = 0.; // Mass of visible object on side A
+	    double mVisB = 0.; // Mass of visible object on side B
+	    
+	    double chiA = 0.;
+	    double chiB = 0.;
 
-	    if ( same_flavor ){
-		 //if ( m_ll < 100. ){
-		    // Impose MT2 cut
-		 sum_sf_EventWeights += evt_weight;
+	    double desiredPrecisionOnMt2 = 0.;
 
-		 //}
-		 //else{
-		 //   sum_sf_EventWeights += evt_weight;
-		 //}	 
+	    LorentzVector MET_p4(nt.MET_pt(),0.,nt.MET_phi(),0.);
+
+	    LorentzVector rest_WW = p4_l_W1 + p4_l_W2 + MET_p4;
+	    auto beta_from_miss_reverse(-rest_WW.BoostToCM());
+	    //TVector3 beta_from_miss(-beta_from_miss_reverse.X(),-beta_from_miss_reverse.Y(),-beta_from_miss_reverse.Z());
+	    auto beta_from_miss = -beta_from_miss_reverse;
+
+	    ROOT::Math::Boost xf(beta_from_miss.X(),beta_from_miss.Y(),beta_from_miss.Z());
+
+	    LorentzVector boosted_p4_l_W1 = xf*p4_l_W1;
+	    LorentzVector boosted_p4_l_W2 = xf*p4_l_W2;
+	    MET_p4 = xf*MET_p4;
+
+	    asymm_mt2_lester_bisect::disableCopyrightMessage();
+	    MT2 = asymm_mt2_lester_bisect::get_mT2( mVisA, boosted_p4_l_W1.Px(), boosted_p4_l_W1.Py(), mVisB, boosted_p4_l_W2.Px(), boosted_p4_l_W2.Py(), MET_p4.Px(), MET_p4.Py(), chiA, chiB, desiredPrecisionOnMt2);
+
+	    // Construct pT_4L
+	    double lep_px_sum = px_l_Z1 + px_l_Z2 + p4_l_W1.Px() + p4_l_W2.Px();
+	    double lep_py_sum = py_l_Z1 + py_l_Z2 + p4_l_W1.Py() + p4_l_W2.Py();
+
+	    double pt_4l = std::sqrt(std::pow(lep_px_sum,2.0)+std::pow(lep_py_sum,2.0));
+
+	    bool sf_pass = false;
+	    bool of_pass = false;
+
+	    if ( same_flav ){
+		// Bin A
+		if ( nt.MET_pt() > 120. ) sf_pass = true;
+		if ( 70. < nt.MET_pt() < 120. ){
+		     // Bin B
+		     if ( pt_4l > 70. ) sf_pass = true;
+		     // Bin C
+		     if ( 40. < pt_4l < 70. ) sf_pass = true;
+		     if ( pt_4l <= 40. ) continue;
+		}
+		if ( nt.MET_pt() <= 70. ) continue;
+		      sf_pass = true;
 	    }
 
-	    if ( opposite_flavor ){
-		 sum_of_EventWeights += evt_weight;
+	    if ( opp_flav ){
+		 if ( m_Wcands < 100. && MT2 < 25.) continue;
+		 
+		 if ( m_Wcands < 100. && MT2 > 25.) of_pass = true;
+		      
+                 if ( m_Wcands >= 100. ){
+		      of_pass = true;
+                 }
 	    }
+
+	
+            if ( sf_pass ) sum_sf_EventWeights += evt_weight;
+	    if ( of_pass ) sum_of_EventWeights += evt_weight;
 
 	    
             //float weight = genWeight();
@@ -514,24 +614,25 @@ int ScanChain(TChain *ch, TString process, TString year, double xsec, double Gen
     //std::cout << "Number of events in pre opposite-flavor category = " << sum_pre_of_EventWeights << endl;
     std::cout << "Number of events in same-flavor category = " << sum_sf_EventWeights  << endl;
     std::cout << "Number of events in opposite-flavor category = " << sum_of_EventWeights << endl;
-    //std::cout << "Number of events in mu-mu category = " << sumW_mm_EventWeights << endl;
-    //std::cout << "Number of events in el-el category = " << sumW_ee_EventWeights << endl;
-    //std::cout << "Number of events in el-mu category = " << sumW_em_EventWeights << endl;
-    //std::cout << "N events 4mu = " << nEvents_4mu << endl;
-    //std::cout << "N events 3mu = " << nEvents_3mu << endl;
-    //std::cout << "N events 2mu = " << nEvents_2mu << endl;
-    //std::cout << "N events 1mu = " << nEvents_1mu << endl;
-    //std::cout << "N events 0mu = " << nEvents_4el << endl;
-    //std::cout << "N events Zee WeWe = " << nEvents_Zee_WeWe << endl;
-    //std::cout << "N events Zee WeWm = " << nEvents_Zee_WeWm << endl;
-    //std::cout << "N events Zee WmWm = " << nEvents_Zee_WmWm << endl;
-    //std::cout << "N events Zmm WeWe = " << nEvents_Zmm_WeWe << endl;
-    //std::cout << "N events Zmm WeWm = " << nEvents_Zmm_WeWm << endl;
-    //std::cout << "N events Zmm WmWm = " << nEvents_Zmm_WmWm << endl; 
-    //std::cout << "N events 2+ muons, 0 electrons = " << nEvents_2pmu_0el << endl;
-    //std::cout << "N events 1+ muons, 1+ electrons = " << nEvents_1pmu_1pel << endl;
-    //std::cout << "N events 0 muons, 2+ electrons = " << nEvents_0mu_2pel << endl;
-
+    /*
+    std::cout << "Number of events in mu-mu category = " << sumW_mm_EventWeights << endl;
+    std::cout << "Number of events in el-el category = " << sumW_ee_EventWeights << endl;
+    std::cout << "Number of events in el-mu category = " << sumW_em_EventWeights << endl;
+    std::cout << "N events 4mu = " << nEvents_4mu << endl;
+    std::cout << "N events 3mu = " << nEvents_3mu << endl;
+    std::cout << "N events 2mu = " << nEvents_2mu << endl;
+    std::cout << "N events 1mu = " << nEvents_1mu << endl;
+    std::cout << "N events 0mu = " << nEvents_4el << endl;
+    std::cout << "N events Zee WeWe = " << nEvents_Zee_WeWe << endl;
+    std::cout << "N events Zee WeWm = " << nEvents_Zee_WeWm << endl;
+    std::cout << "N events Zee WmWm = " << nEvents_Zee_WmWm << endl;
+    std::cout << "N events Zmm WeWe = " << nEvents_Zmm_WeWe << endl;
+    std::cout << "N events Zmm WeWm = " << nEvents_Zmm_WeWm << endl;
+    std::cout << "N events Zmm WmWm = " << nEvents_Zmm_WmWm << endl; 
+    std::cout << "N events 2+ muons, 0 electrons = " << nEvents_2pmu_0el << endl;
+    std::cout << "N events 1+ muons, 1+ electrons = " << nEvents_1pmu_1pel << endl;
+    std::cout << "N events 0 muons, 2+ electrons = " << nEvents_0mu_2pel << endl;
+    */
     f1->Write();
     f1->Close();
     return 0;

@@ -40,32 +40,20 @@ using namespace tas;
 
 int ScanChain(TChain *ch) {
 
-    TFile* f1 = new TFile("output_testLHE.root", "RECREATE");
+    TFile* f1 = new TFile("output_checkGenPart.root", "RECREATE");
     //float pt = 0;
     //TTree tree_out("tree","");
-    //tree_out.Branch("pt", &pt);
-    H1(nLeps,6,0,6);
-    H1(nCandMu,6,0,6);
-    H1(nCandEl,6,0,6);
-    H1(nCandLeps,6,0,6);
-    H1(fourLeps,2,0,2);
-    H1(mu_pt,50,0,500);
-    H1(el_pt,50,0,500);
-    H1(mu_eta,50,-4.,4.);
-    H1(el_eta,50,-4.,4.);
-    H1(m_Z1,50,0,300);
-    H1(m_Z2,50,0,300);
-    //H2(mZ1,mZ2,50,0,300,50,0,300);
-    H1(m_ee,50,0,300);
-    H1(m_mm,50,0,300);
-    TH2* h_Z1Z2 = new TH2D("h2","h2",50,0.,300.,50,0.,300.);
-
     int nEventsTotal = 0;
     int nEventsChain = ch->GetEntries();
     TFile *currentFile = 0;
     TObjArray *listOfFiles = ch->GetListOfFiles();
     TIter fileIter(listOfFiles);
     tqdm bar;
+
+    int nEvents_ZHWW = 0;
+    int nEvents_WHWW = 0;
+    int nEvents_WHZZ = 0;
+    int nEvents_ZHZZ = 0;
 
     //gconf.year = 2018;
     while ( (currentFile = (TFile*)fileIter.Next()) ) {
@@ -87,74 +75,26 @@ int ScanChain(TChain *ch) {
             nEventsTotal++;
             bar.progress(nEventsTotal, nEventsChain);
 
-	    int nLHE_el = 0;
-	    std::vector<int> lhe_el;
-	    int nLHE_mu = 0;
-	    std::vector<int> lhe_mu;
+	    int V_abspdgid = abs(nt.GenPart_pdgId().at(2));
+	    int HXX_abspdgid = 0;
+	    int nWs = 0;
+            int nZs = 0;
 
-	    int nCand_mu = 0;
-            int nCand_el = 0;
-
-	    bool four_leps = false;
-
-            for ( int i = 0; i < nt.nLHEPart(); i++ ){
-		 if ( !(nt.LHEPart_status().at(i) == 1) ) continue;
-		 if ( std::abs(nt.LHEPart_pdgId().at(i)) == 11 ){
-		      lhe_el.push_back(i);
-		      h_el_pt->Fill(nt.LHEPart_pt().at(i));
-		      h_el_eta->Fill(nt.LHEPart_eta().at(i));
-		      if ( nt.LHEPart_pt().at(i) > 10 && std::abs(nt.LHEPart_eta().at(i)) < 2.5 ){
-			   nCand_el++;	
-		      }
-		 }
-		 if ( std::abs(nt.LHEPart_pdgId().at(i)) == 13 ){
-		      lhe_mu.push_back(i);
-		      h_mu_pt->Fill(nt.LHEPart_pt().at(i));
-		      h_mu_eta->Fill(nt.LHEPart_eta().at(i));
-		      if ( nt.LHEPart_pt().at(i) > 10 && std::abs(nt.LHEPart_eta().at(i)) < 2.4 ){
-                           nCand_mu++;
-                      }
-		 }
+	    for (unsigned int igen = 0; igen < nt.GenPart_pdgId().size(); ++igen){
+		 // Get the particles with higgs as mother that is not higgs
+		 if ( std::abs(nt.GenPart_pdgId().at(igen)) == 25 ) continue;
+		 if ( std::abs(nt.GenPart_pdgId().at(igen)) == 24 && std::abs(nt.GenPart_pdgId().at(nt.GenPart_genPartIdxMother().at(igen))) == 25 ){
+			nWs++;
+	         }
+		 if ( std::abs(nt.GenPart_pdgId().at(igen)) == 23 && std::abs(nt.GenPart_pdgId().at(nt.GenPart_genPartIdxMother().at(igen))) == 25 ){
+                        nZs++;
+                 }
 	    }
 
-	    nLHE_el = lhe_el.size();
-	    nLHE_mu = lhe_mu.size();
-
-	    if (nCand_mu+nCand_el >=4){
-		four_leps = true;
-	    }
-
-	    float m_Z1 = 0;
-	    float m_Z2 = 0;
-	    float m_ee = 0;
-	    float m_mm = 0;
-
-	    if ( nLHE_el > 3 ){
-		 m_Z1 = (nt.LHEPart_p4().at(lhe_el[0])+nt.LHEPart_p4().at(lhe_el[1])).M();
-		 m_Z2 = (nt.LHEPart_p4().at(lhe_el[2])+nt.LHEPart_p4().at(lhe_el[3])).M(); 
-	    }
-
-	    if ( nLHE_mu > 3 ){
-                 m_Z1 = (nt.LHEPart_p4().at(lhe_mu[0])+nt.LHEPart_p4().at(lhe_mu[1])).M();
-                 m_Z2 = (nt.LHEPart_p4().at(lhe_mu[2])+nt.LHEPart_p4().at(lhe_mu[3])).M();
-            }
-
-	    if ( nLHE_mu > 1 && nLHE_el > 1 ){
-		 m_ee = (nt.LHEPart_p4().at(lhe_el[0])+nt.LHEPart_p4().at(lhe_el[1])).M();
-		 m_mm = (nt.LHEPart_p4().at(lhe_mu[0])+nt.LHEPart_p4().at(lhe_mu[1])).M();	 
-	    }
-
-	    h_nLeps->Fill(nLHE_el+nLHE_mu);
-	    h_nCandMu->Fill(nCand_mu);
-	    h_nCandEl->Fill(nCand_el);
-	    h_nCandLeps->Fill(nCand_mu+nCand_el);
-	    h_fourLeps->Fill(four_leps);
-	    if (m_Z1 > 0.0) h_m_Z1->Fill(m_Z1);
-	    if (m_Z2 > 0.0) h_m_Z2->Fill(m_Z2);
-	    if (m_ee > 0.0) h_m_ee->Fill(m_ee);
-	    if (m_mm > 0.0) h_m_mm->Fill(m_mm);
-
-	    if (m_Z1 > 0.0 && m_Z2 > 0.0) h_Z1Z2->Fill(m_Z1,m_Z2);
+	    if ( nWs == 2 && V_abspdgid == 23 ) nEvents_ZHWW++;
+	    if ( nWs == 2 && V_abspdgid == 24 ) nEvents_WHWW++;
+	    if ( nZs == 2 && V_abspdgid == 23 ) nEvents_ZHZZ++;
+	    if ( nZs == 2 && V_abspdgid == 24 ) nEvents_WHZZ++;
 
 
         } // Event loop
@@ -164,6 +104,11 @@ int ScanChain(TChain *ch) {
 
     } // File loop
     bar.finish();
+
+    std::cout << "Number of ZHWW events = " << nEvents_ZHWW << endl;
+    std::cout << "Number of WHWW events = " << nEvents_WHWW << endl;
+    std::cout << "Number of ZHZZ events = " << nEvents_ZHZZ << endl;
+    std::cout << "Number of WHZZ events = " << nEvents_WHZZ << endl;
 
     f1->Write();
     f1->Close();

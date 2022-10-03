@@ -8343,6 +8343,7 @@ void Nano::PrintUsage() {
     std::cout << "Muon_nStations (uncached/cached calls): " << counter_uncached_Muon_nStations_ << " / " << counter_cached_Muon_nStations_ << std::endl;;
     std::cout << "Muon_nTrackerLayers (uncached/cached calls): " << counter_uncached_Muon_nTrackerLayers_ << " / " << counter_cached_Muon_nTrackerLayers_ << std::endl;;
     std::cout << "Muon_p4 (uncached/cached calls): " << counter_uncached_Muon_p4_ << " / " << counter_cached_Muon_p4_ << std::endl;;
+    std::cout << "met_p4 (uncached/cached calls): " << counter_uncached_met_p4_ << " / " << counter_cached_met_p4_ << std::endl;;
     std::cout << "Muon_pdgId (uncached/cached calls): " << counter_uncached_Muon_pdgId_ << " / " << counter_cached_Muon_pdgId_ << std::endl;;
     std::cout << "Muon_pfIsoId (uncached/cached calls): " << counter_uncached_Muon_pfIsoId_ << " / " << counter_cached_Muon_pfIsoId_ << std::endl;;
     std::cout << "Muon_pfRelIso03_all (uncached/cached calls): " << counter_uncached_Muon_pfRelIso03_all_ << " / " << counter_cached_Muon_pfRelIso03_all_ << std::endl;;
@@ -11223,6 +11224,7 @@ void Nano::GetEntry(unsigned int idx) {
     loaded_Muon_nStations_ = false;
     loaded_Muon_nTrackerLayers_ = false;
     loaded_Muon_p4_ = false;
+    loaded_met_p4_ = false;
     loaded_Muon_pdgId_ = false;
     loaded_Muon_pfIsoId_ = false;
     loaded_Muon_pfRelIso03_all_ = false;
@@ -37889,6 +37891,18 @@ const vector<LorentzVector> &Nano::Muon_p4() {
     }
     return v_Muon_p4_;
 }
+const LorentzVector &Nano::met_p4() {
+    if (!loaded_met_p4_) counter_uncached_met_p4_++;
+    else counter_cached_met_p4_++;
+    if (!loaded_met_p4_) {
+        //v_met_p4_.clear();
+        float pt = Nano::MET_pt();
+        float phi = Nano::MET_phi();
+        v_met_p4_ = LorentzVector(pt,0.,phi,0.);
+        loaded_met_p4_ = true;
+    }
+    return v_met_p4_;
+}
 const vector<int> &Nano::Muon_pdgId() {
     if (!loaded_Muon_pdgId_) counter_uncached_Muon_pdgId_++;
     else counter_cached_Muon_pdgId_++;
@@ -43610,6 +43624,7 @@ namespace tas {
     const vector<int> &Muon_nStations() { return nt.Muon_nStations(); }
     const vector<int> &Muon_nTrackerLayers() { return nt.Muon_nTrackerLayers(); }
     const vector<LorentzVector> &Muon_p4() { return nt.Muon_p4(); }
+    const LorentzVector &met_p4() { return nt.met_p4(); }
     const vector<int> &Muon_pdgId() { return nt.Muon_pdgId(); }
     const vector<UChar_t> &Muon_pfIsoId() { return nt.Muon_pfIsoId(); }
     const vector<float> &Muon_pfRelIso03_all() { return nt.Muon_pfRelIso03_all(); }
@@ -44642,6 +44657,7 @@ namespace tas {
         else if (name == "LHEPart_p4") return nt.LHEPart_p4();
         else if (name == "LowPtElectron_p4") return nt.LowPtElectron_p4();
         else if (name == "Muon_p4") return nt.Muon_p4();
+	else if (name == "met_p4") return nt.met_p4();
         else if (name == "Photon_p4") return nt.Photon_p4();
         else if (name == "SV_p4") return nt.SV_p4();
         else if (name == "SubGenJetAK8_p4") return nt.SubGenJetAK8_p4();

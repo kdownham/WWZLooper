@@ -13432,10 +13432,15 @@ protected:
     unsigned int counter_cached_Muon_nTrackerLayers_;
     unsigned int counter_uncached_Muon_nTrackerLayers_;
     vector<LorentzVector> v_Muon_p4_;
+    LorentzVector v_met_p4_;
     TBranch *b_Muon_p4_;
     bool loaded_Muon_p4_;
+    TBranch *b_met_p4_;
+    bool loaded_met_p4_;
     unsigned int counter_cached_Muon_p4_;
     unsigned int counter_uncached_Muon_p4_;
+    unsigned int counter_cached_met_p4_;
+    unsigned int counter_uncached_met_p4_;
     int Muon_pdgId_[NMUON_MAX];
     vector<int> v_Muon_pdgId_;
     TBranch *b_Muon_pdgId_;
@@ -17671,6 +17676,7 @@ public:
     const vector<int> &Muon_nStations();
     const vector<int> &Muon_nTrackerLayers();
     const vector<LorentzVector> &Muon_p4();
+    const LorentzVector &met_p4();
     const vector<int> &Muon_pdgId();
     const vector<UChar_t> &Muon_pfIsoId();
     const vector<float> &Muon_pfRelIso03_all();
@@ -20556,6 +20562,7 @@ namespace tas {
     const vector<int> &Muon_nStations(); // number of matched stations with default arbitration (segment & track)
     const vector<int> &Muon_nTrackerLayers(); // number of layers in the tracker
     const vector<LorentzVector> &Muon_p4(); // from Muon_pt,eta,phi,mass
+    const LorentzVector &met_p4();
     const vector<int> &Muon_pdgId(); // PDG code assigned by the event reconstruction (not by MC truth)
     const vector<UChar_t> &Muon_pfIsoId(); // PFIso ID from miniAOD selector (1=PFIsoVeryLoose, 2=PFIsoLoose, 3=PFIsoMedium, 4=PFIsoTight, 5=PFIsoVeryTight, 6=PFIsoVeryVeryTight)
     const vector<float> &Muon_pfRelIso03_all(); // PF relative isolation dR=0.3, total (deltaBeta corrections)

@@ -50,6 +50,8 @@ int ScanChain(TChain *ch) {
     int nEventsFourMu = 0;
     int nEventsTwoMuTwoEl = 0;
     int nEventsFourEl = 0;
+    int nEventsThreeMuOneEl = 0;
+    int nEventsOneMuThreeEl = 0;
     int nEventsChain = ch->GetEntries();
     TFile *currentFile = 0;
     TObjArray *listOfFiles = ch->GetListOfFiles();
@@ -102,9 +104,11 @@ int ScanChain(TChain *ch) {
 	    if ( nCand_leps < 4 ) continue;
 	    nEventsPassing++;
 
-	    if ( nCand_mu > 3 ) nEventsFourMu++;
-	    if ( nCand_ele > 3 ) nEventsFourEl++;
-	    if ( nCand_mu > 1 && nCand_ele > 1 ) nEventsTwoMuTwoEl++;
+	    if ( nCand_mu == 4 ) nEventsFourMu++;
+	    if ( nCand_ele == 4 ) nEventsFourEl++;
+	    if ( nCand_mu == 2 && nCand_ele == 2 ) nEventsTwoMuTwoEl++;
+	    if ( nCand_mu == 3 && nCand_ele == 1) nEventsThreeMuOneEl++;
+	    if ( nCand_mu == 1 && nCand_ele == 3) nEventsOneMuThreeEl++;
 
 	    //h_isSkim->Fill(isSkimEvent);
 
@@ -118,9 +122,11 @@ int ScanChain(TChain *ch) {
     bar.finish();
 
     std::cout << nEventsPassing << " events passed skim requirements, out of " << nEventsTotal << " total events" << endl;
-    std::cout << "Number of events with at least 4 candidate muons = " << nEventsFourMu << endl;
-    std::cout << "Number of events with at least 4 candidate electrons = " << nEventsFourEl << endl;
-    std::cout << "Number of events with at least 2 candidate muons and 2 candidate electrons = " << nEventsTwoMuTwoEl << endl;
+    std::cout << "Number of events with 4 candidate muons = " << nEventsFourMu << endl;
+    std::cout << "Number of events with 4 candidate electrons = " << nEventsFourEl << endl;
+    std::cout << "Number of events with 2 candidate muons and 2 candidate electrons = " << nEventsTwoMuTwoEl << endl;
+    std::cout << "Number of events with 3 candidate muons and 1 candidate electron = " << nEventsThreeMuOneEl << endl;
+    std::cout << "Number of events with 1 candidate muon and 3 candidate electrons = " << nEventsOneMuThreeEl << endl;
 
     f1->Write();
     f1->Close();

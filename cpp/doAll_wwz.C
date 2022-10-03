@@ -23,8 +23,7 @@ void doAll_wwz(){
     TString WWZ_ext1_dir_18 = "WWZ_4F_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL18NanoAODv9-106X_upgrade2018_realistic_v16_L1v1_ext1-v2_NANOAODSIM_WWZ_4L";
     TString GGZH_dir_18 = "GluGluZH_HToWWTo2L2Nu_M-125_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL18NanoAODv9-106X_upgrade2018_realistic_v16_L1v1-v2_NANOAODSIM_WWZ_4L";
     TString HZJ_dir_18 = "HZJ_HToWWTo2L2Nu_ZTo2L_M-125_TuneCP5_13TeV-powheg-jhugen727-pythia8_RunIISummer20UL18NanoAODv9-106X_upgrade2018_realistic_v16_L1v1-v2_NANOAODSIM_WWZ_4L";
-    TString VHToNonbb_dir_18 = "VHToNonbb_M125_TuneCP5_13TeV-amcatnloFXFX_madspin_pythia8_RunIISummer20UL18NanoAODv9-106X_upgrade2018_realistic_v16_L1v1-v2_NANOAODSIM_WWZ_4L";
-    
+    TString WWZJets_dir_18 = "WWZJetsTo4L2Nu_4F_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL18NanoAODv9-106X_upgrade2018_realistic_v16_L1v1-v2_NANOAODSIM_WWZ_4L"; 
 
     ch->Add(baseDir+WWZ_dir_18+"/*");
     ch->Add(baseDir+WWZ_ext1_dir_18+"/*");
@@ -40,9 +39,9 @@ void doAll_wwz(){
     ch3_aux->Add(baseDir+HZJ_dir_18+"/*");
     ScanChain(ch3,"HZJ","2018",get_xsec("HZJ"),getSumOfGenEventSumw(ch3_aux),true);
 
-    ch4->Add(baseDir+VHToNonbb_dir_18+"/*");
-    ch4_aux->Add(baseDir+VHToNonbb_dir_18+"/*");
-    ScanChain(ch4,"VHToNonbb","2018",get_xsec("VHToNonbb"),getSumOfGenEventSumw(ch4_aux),true);
+    ch4->Add(baseDir+WWZJets_dir_18+"/*");
+    ch4_aux->Add(baseDir+WWZJets_dir_18+"/*");
+    ScanChain(ch4,"WWZJets","2018",get_xsec("WWZJets"),getSumOfGenEventSumw(ch4_aux),true);
     
 }
 // Called in ScanChain function ----- See how Z prime does this
