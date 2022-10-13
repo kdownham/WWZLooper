@@ -29,18 +29,18 @@ void doAll_wwz(){
     ch->Add(baseDir+WWZ_ext1_dir_18+"/*");
     ch_aux->Add(baseDir+WWZ_dir_18+"/*");
     ch_aux->Add(baseDir+WWZ_ext1_dir_18+"/*");
-    ScanChain(ch,"WWZ","2018",get_xsec("WWZ"),getSumOfGenEventSumw(ch_aux),true);
+    //ScanChain(ch,"WWZ","2018",get_xsec("WWZ"),getSumOfGenEventSumw(ch_aux),true);
     
     ch2->Add(baseDir+GGZH_dir_18+"/*");
     ch2_aux->Add(baseDir+GGZH_dir_18+"/*");
-    ScanChain(ch2,"ggZH","2018",get_xsec("ggZH"),getSumOfGenEventSumw(ch2_aux),true);
+    //ScanChain(ch2,"ggZH","2018",get_xsec("ggZH"),getSumOfGenEventSumw(ch2_aux),true);
 
     ch3->Add(baseDir+HZJ_dir_18+"/*");
     ch3_aux->Add(baseDir+HZJ_dir_18+"/*");
-    ScanChain(ch3,"HZJ","2018",get_xsec("HZJ"),getSumOfGenEventSumw(ch3_aux),true);
+    //ScanChain(ch3,"HZJ","2018",get_xsec("HZJ"),getSumOfGenEventSumw(ch3_aux),true);
 
-    ch4->Add(baseDir+WWZJets_dir_18+"/*");
-    ch4_aux->Add(baseDir+WWZJets_dir_18+"/*");
+    ch4->Add(baseDir+WWZJets_dir_18+"/output_7.root");
+    ch4_aux->Add(baseDir+WWZJets_dir_18+"/output_7.root");
     ScanChain(ch4,"WWZJets","2018",get_xsec("WWZJets"),getSumOfGenEventSumw(ch4_aux),true);
     
 }

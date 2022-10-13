@@ -21,6 +21,7 @@
 #include "TTreeReaderArray.h"
 
 typedef ROOT::Math::LorentzVector<ROOT::Math::PtEtaPhiM4D<float> > LorentzVector;
+//typedef ROOT::Math::LorentzVector<ROOT::Math::PtEtaPhiM4D<float> > LV;
 #define makeP4(Collection, idx) LorentzVector(Collection##_pt[idx],Collection##_eta[idx],Collection##_phi[idx],Collection##_mass[idx]);
 #define RANGE(a, b) unsigned a=0; a<b; a++
 
