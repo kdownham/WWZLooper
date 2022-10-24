@@ -160,9 +160,9 @@ int ScanChain(TChain *ch, TString process, TString year, double xsec, double Gen
 	
 	    bool isEvent = false;
 
-	    //if ( nt.run() == 1 && nt.luminosityBlock() == 1801 && nt.event() == 1800002 ){
-	//	 isEvent = true;
-	  //  }
+	    if ( nt.run() == 1 && nt.luminosityBlock() == 3000 && nt.event() == 2999700 ){
+		 isEvent = true;
+	    }
 
 	    bool triggerReqs = false;
 
@@ -193,18 +193,15 @@ int ScanChain(TChain *ch, TString process, TString year, double xsec, double Gen
 
 
             for (int i = 0; i < nt.nMuon(); i++){
-                if (!nt.Muon_looseId().at(i)) continue;
-		if (isEvent) std::cout << "Passed muon loose ID" << endl;
+                if (!(nt.Muon_looseId().at(i))) continue;
 		if (!(std::abs(nt.Muon_eta().at(i)) < 2.4)) continue;
-		if (isEvent) std::cout << "Passed muon eta" << endl;
 		if (!(nt.Muon_pt().at(i) > 10.)) continue;
-		if (isEvent) std::cout << "Passed muon pt" << endl;
                 if (!(nt.Muon_pfIsoId().at(i) >= 1)) continue;
-		if (isEvent) std::cout << "Passed muon pfIso" << endl;
 		if (isEvent) std::cout << "Muon pT = " << Muon_pt()[i] << endl;
 		if (isEvent) std::cout << "Muon eta = " << Muon_eta()[i] << endl;
 		if (isEvent) std::cout << "Muon phi = " << Muon_phi()[i] << endl;
 		if (isEvent) std::cout << "Muon pdgId = " << Muon_pdgId()[i] << endl;
+		if (isEvent) std::cout << "Muon pfIsoId = " << Muon_pfIsoId()[i] << endl;
 		lep_idxs.push_back(i);
 		lep_ids.push_back(Muon_pdgId()[i]);
 		lep_p4s.push_back(Muon_p4()[i]);	
@@ -215,18 +212,15 @@ int ScanChain(TChain *ch, TString process, TString year, double xsec, double Gen
             // Electrons
 	 
 	    for (int j = 0; j < nt.nElectron(); j++){
-		if (!nt.Electron_mvaFall17V2noIso_WPL().at(j)) continue;
-		if (isEvent) std::cout << "Passed electron noIso WPL" << endl;
+		if (!(nt.Electron_mvaFall17V2noIso_WPL().at(j))) continue;
 		if (!(std::abs(nt.Electron_eta().at(j)) < 2.5)) continue;
-		if (isEvent) std::cout << "Passed electron eta" << endl;
 		if (!(nt.Electron_pt().at(j) > 10.)) continue;
-		if (isEvent) std::cout << "Passed electron pt" << endl;
 		if (!(nt.Electron_pfRelIso03_all().at(j) < 0.4)) continue;
-		if (isEvent) std::cout << "Passed electron pfRelIso" << endl;
 		if (isEvent) std::cout << "Electron pT = " << Electron_pt()[j] << endl;
                 if (isEvent) std::cout << "Electron eta = " << Electron_eta()[j] << endl;
                 if (isEvent) std::cout << "Electron phi = " << Electron_phi()[j] << endl;
                 if (isEvent) std::cout << "Electron pdgId = " << Electron_pdgId()[j] << endl;
+		if (isEvent) std::cout << "Electron pfRelIso03_all = " << Electron_pfRelIso03_all()[j] << endl;
 		lep_idxs.push_back(j);
                 lep_ids.push_back(Electron_pdgId()[j]);
                 lep_p4s.push_back(Electron_p4()[j]);
@@ -321,21 +315,37 @@ int ScanChain(TChain *ch, TString process, TString year, double xsec, double Gen
 	    
 	    
 //////////////Lepton ID categorization//////////////////////////////////////////////////////////////
-           
 
 	    if ( mu_Z_cand.size() > 0 ){
 		 if (isEvent) std::cout << "Number of mu Z candidates = " << mu_Z_cand.size() << endl;
 		 int nmuZ = 0;
 		 for ( int mu_Z = 0; mu_Z < mu_Z_cand.size(); mu_Z++ ){
-		       //if ( !Muon_mediumId()[mu_Z_cand[mu_Z]] ) continue;
-		       //if (isEvent) std::cout << "Passed muon medium id" << endl;
-		       //if (isEvent) std::cout << "Muon sip3d = " << Muon_sip3d()[mu_Z_cand[mu_Z]] << endl;
-		       if ( !(std::abs(Muon_ip3d()[mu_Z_cand[mu_Z]]/Muon_sip3d()[mu_Z_cand[mu_Z]]) < 4) ) continue;
+		       //if ( !(std::abs(Muon_ip3d()[mu_Z_cand[mu_Z]]/Muon_sip3d()[mu_Z_cand[mu_Z]]) < 4) ) continue;
+		       if (!(Muon_sip3d()[mu_Z_cand[mu_Z]] < 4. )) continue;
 		       if (isEvent) std::cout << "Passed muon sip3d cut" << endl;
-		       //if ( !(Muon_pfRelIso04_all()[mu_Z_cand[mu_Z]] < 0.25 )) continue;
-		       //if (isEvent) std::cout << "Passed muon pfRelIso cut" << endl;
-		       //if ( !(Muon_pfIsoId()[mu_Z_cand[mu_Z]] >= 2) ) continue;
-		       if ( !(Muon_pfIsoId()[mu_Z_cand[mu_Z]] >= 1) ) continue;
+		       if (isEvent) std::cout << "//////////////////////////////////////" << endl;
+		       if (isEvent) std::cout << "Muon Z cand sip3d = " << Muon_sip3d()[mu_Z_cand[mu_Z]] << endl;
+		       if (isEvent) std::cout << "//////////////////////////////////////" << endl;
+		       if (isEvent) std::cout << "Muon Z cand pfRelIso03_all = " << Muon_pfRelIso03_all()[mu_Z_cand[mu_Z]] << endl;
+                       if (isEvent) std::cout << "//////////////////////////////////////" << endl;
+
+		       if (isEvent) std::cout << "Muon Z cand pt = " << Muon_pt()[mu_Z_cand[mu_Z]] << endl;
+                       if (isEvent) std::cout << "//////////////////////////////////////" << endl;
+		       int muZ_ID = 0;
+		       muZ_ID |= Muon_mediumId()[mu_Z_cand[mu_Z]] << 0;
+		       muZ_ID |= Muon_tightId()[mu_Z_cand[mu_Z]] << 1;
+		       muZ_ID |= Muon_pfIsoId()[mu_Z_cand[mu_Z]] << 2;
+
+		       if (isEvent){
+			    std::cout << "Muon medium ID: " << (Muon_mediumId()[mu_Z_cand[mu_Z]] << 0)<< endl;
+			    std::cout << "Muon tight ID: " << (Muon_tightId()[mu_Z_cand[mu_Z]] << 1)<< endl;
+			    std::cout << "Muon pfIsoId: " << (Muon_pfIsoId()[mu_Z_cand[mu_Z]] << 2) << endl;
+		       }	
+
+		       if (!((muZ_ID >> 2) >= 2)) continue;
+		       if (isEvent) std::cout << "Muon Z cand ID = " << muZ_ID << endl;
+                       if (isEvent) std::cout << "//////////////////////////////////////" << endl;
+
 		       nmuZ++;
 		 }
 		 if (isEvent) std::cout << "nmuZ = " << nmuZ << " , number of Z cand mu's = " << mu_Z_cand.size() << endl;
@@ -348,14 +358,30 @@ int ScanChain(TChain *ch, TString process, TString year, double xsec, double Gen
 		 if (isEvent) std::cout << "Mu cand W size > 0" << endl;
 		 int nmuW = 0;
 		 for ( int mu_W = 0; mu_W < mu_W_cand.size(); mu_W++ ){
-		       //if ( !Muon_mediumId()[mu_W_cand[mu_W]] ) continue;
-		       //if (isEvent) std::cout << "Passed muon medium ID" << endl;
-                       if ( !(std::abs(Muon_ip3d()[mu_W_cand[mu_W]]/Muon_sip3d()[mu_W_cand[mu_W]]) < 4) ) continue;
+                       //if ( !(std::abs(Muon_ip3d()[mu_W_cand[mu_W]]/Muon_sip3d()[mu_W_cand[mu_W]]) < 4) ) continue;
+                       if (!(Muon_sip3d()[mu_W_cand[mu_W]] < 4.)) continue;
 		       if (isEvent) std::cout << "Passed muon sip3d cut" << endl;
-                       //if ( !(Muon_pfRelIso04_all()[mu_W_cand[mu_W]] < 0.15 )) continue;
-		       //if (isEvent) std::cout << "Passed muon pfRelIso cut" << endl;
-                       //if ( !(Muon_pfIsoId()[mu_W_cand[mu_W]] >= 3) ) continue;
-		       if ( !(Muon_pfIsoId()[mu_W_cand[mu_W]] >= 1) ) continue;
+		       if (isEvent) std::cout << "//////////////////////////////////////" << endl;
+                       if (isEvent) std::cout << "Muon W cand sip3d = " << Muon_sip3d()[mu_W_cand[mu_W]] << endl;
+                       if (isEvent) std::cout << "//////////////////////////////////////" << endl;
+		       if (isEvent) std::cout << "Muon W cand pfRelIso03_all = " << Muon_pfRelIso03_all()[mu_W_cand[mu_W]] << endl;
+                       if (isEvent) std::cout << "//////////////////////////////////////" << endl;
+		       if (isEvent) std::cout << "Muon W cand pt = " << Muon_pt()[mu_W_cand[mu_W]] << endl;
+                       if (isEvent) std::cout << "//////////////////////////////////////" << endl;
+		       int muW_ID = 0;
+                       muW_ID |= Muon_mediumId()[mu_W_cand[mu_W]] << 0;
+                       muW_ID |= Muon_tightId()[mu_W_cand[mu_W]] << 1;
+                       muW_ID |= Muon_pfIsoId()[mu_W_cand[mu_W]] << 2;
+
+		       if (isEvent){
+                            std::cout << "Muon medium ID: " << (Muon_mediumId()[mu_W_cand[mu_W]] << 0)<< endl;
+                            std::cout << "Muon tight ID: " << (Muon_tightId()[mu_W_cand[mu_W]] << 1)<< endl;
+                            std::cout << "Muon pfIsoId: " << (Muon_pfIsoId()[mu_W_cand[mu_W]] << 2) << endl;
+                       }
+
+                       if (!((muW_ID >> 2) >= 3)) continue;
+		       if (isEvent) std::cout << "Muon W cand ID = " << muW_ID << endl;
+                       if (isEvent) std::cout << "//////////////////////////////////////" << endl;
 		       nmuW++;
 		 }
 		 if (isEvent) std::cout << "nmuW = " << nmuW << " , number of W cand mu's = " << mu_W_cand.size() << endl;
@@ -369,11 +395,40 @@ int ScanChain(TChain *ch, TString process, TString year, double xsec, double Gen
 	    if ( el_Z_cand.size() > 0 ){
 		 int nelZ = 0;
 		 for ( int el_Z = 0; el_Z < el_Z_cand.size(); el_Z++ ){
-		       if (!(std::abs(Electron_ip3d()[el_Z_cand[el_Z]]/Electron_sip3d()[el_Z_cand[el_Z]]) < 4) ) continue;
-		       //if (!Electron_mvaFall17V2noIso_WPL()[el_Z_cand[el_Z]]) continue;
-		       //if (!(Electron_pfRelIso03_all()[el_Z_cand[el_Z]] < 0.2)) continue;
+		       //if (!(std::abs(Electron_ip3d()[el_Z_cand[el_Z]]/Electron_sip3d()[el_Z_cand[el_Z]]) < 4) ) continue;
+		       if (!(Electron_sip3d()[el_Z_cand[el_Z]] < 4.)) continue;
+		       if (isEvent) std::cout << "//////////////////////////////////////" << endl;
+                       if (isEvent) std::cout << "Electron Z cand sip3d = " << Electron_sip3d()[el_Z_cand[el_Z]] << endl;
+                       if (isEvent) std::cout << "//////////////////////////////////////" << endl;
+		       if (isEvent) std::cout << "Electron Z cand pfRelIso03_all = " << Electron_pfRelIso03_all()[el_Z_cand[el_Z]] << endl;
+		       if (!(Electron_pfRelIso03_all()[el_Z_cand[el_Z]] < 0.2)) continue;
+		       if (isEvent) std::cout << "Electron Z cand pfRelIso03_all = " << Electron_pfRelIso03_all()[el_Z_cand[el_Z]] << endl;
+                       if (isEvent) std::cout << "//////////////////////////////////////" << endl;
+		       if (isEvent) std::cout << "Electron Z cand pt = " << Electron_pt()[el_Z_cand[el_Z]] << endl;
+                       if (isEvent) std::cout << "//////////////////////////////////////" << endl;
+		       if (abs(Electron_eta()[el_Z_cand[el_Z]]) < 1.566 && abs(Electron_eta()[el_Z_cand[el_Z]]) > 1.444) continue; // Match Philip
+		       int elZ_ID = 0;
+		       elZ_ID |= Electron_mvaFall17V2noIso_WPL()[el_Z_cand[el_Z]] << 0;
+                       elZ_ID |= Electron_mvaFall17V2noIso_WP90()[el_Z_cand[el_Z]] << 1;
+                       elZ_ID |= Electron_mvaFall17V2noIso_WP80()[el_Z_cand[el_Z]] << 2;
+                       elZ_ID |= Electron_mvaFall17V2Iso_WPL()[el_Z_cand[el_Z]] << 3;
+                       elZ_ID |= Electron_mvaFall17V2Iso_WP90()[el_Z_cand[el_Z]] << 4;
+                       elZ_ID |= Electron_mvaFall17V2Iso_WP80()[el_Z_cand[el_Z]] << 5;
+
+		       if (isEvent){
+			    std::cout << "Electron mva noIso WPL: " << (Electron_mvaFall17V2noIso_WPL()[el_Z_cand[el_Z]] << 0) << endl;
+			    std::cout << "Electron mva noIso WP90: " << (Electron_mvaFall17V2noIso_WP90()[el_Z_cand[el_Z]] << 1) << endl;
+			    std::cout << "Electron mva noIso WP80: " << (Electron_mvaFall17V2noIso_WP80()[el_Z_cand[el_Z]] << 2) << endl;
+			    std::cout << "Electron mva Iso WPL: " << (Electron_mvaFall17V2Iso_WPL()[el_Z_cand[el_Z]] << 3) << endl;
+			    std::cout << "Electron mva Iso WP90: " << (Electron_mvaFall17V2Iso_WP90()[el_Z_cand[el_Z]] << 4) << endl;
+			    std::cout << "Electron mva Iso WP80: " << (Electron_mvaFall17V2Iso_WP80()[el_Z_cand[el_Z]] << 5) << endl;
+		       }
+
+                       if (isEvent) std::cout << "Electron Z cand ID = " << elZ_ID << endl;
+                       if (isEvent) std::cout << "//////////////////////////////////////" << endl;
 		       nelZ++;
 		 }
+		 if (isEvent) std::cout << "nelZ = " << nelZ << " , el_Z_cand size = " << el_Z_cand.size() << endl;
 		 if ( nelZ < el_Z_cand.size() ) continue;
 	    }
 
@@ -383,10 +438,41 @@ int ScanChain(TChain *ch, TString process, TString year, double xsec, double Gen
 		 if (isEvent) std::cout << "El cand W size > 0" << endl;
 		 int nelW = 0;
 		 for ( int el_W = 0; el_W < el_W_cand.size(); el_W++ ){
-                       if (!(std::abs(Electron_ip3d()[el_W_cand[el_W]]/Electron_sip3d()[el_W_cand[el_W]]) < 4) ) continue;
+                       //if (!(std::abs(Electron_ip3d()[el_W_cand[el_W]]/Electron_sip3d()[el_W_cand[el_W]]) < 4) ) continue;
+                       if (!(Electron_sip3d()[el_W_cand[el_W]] < 4.)) continue;
 		       if (isEvent) std::cout << "Electron passed sip cut!" << endl;
-		       //if (!(Electron_pfRelIso03_all()[el_W_cand[el_W]] < 0.2)) continue;
-                       //if (!Electron_mvaFall17V2Iso_WP90()[el_W_cand[el_W]]) continue;
+		       if (isEvent) std::cout << "//////////////////////////////////////" << endl;
+                       if (isEvent) std::cout << "Electron W cand sip3d = " << Electron_sip3d()[el_W_cand[el_W]] << endl;
+                       if (isEvent) std::cout << "//////////////////////////////////////" << endl;
+		       if (!(Electron_pfRelIso03_all()[el_W_cand[el_W]] < 0.2)) continue;  // Match Philip
+		       if (isEvent) std::cout << "Electron W cand pfRelIso03_all = " << Electron_pfRelIso03_all()[el_W_cand[el_W]] << endl;
+                       if (isEvent) std::cout << "//////////////////////////////////////" << endl;
+		       if (isEvent) std::cout << "Electron W cand pt = " << Electron_pt()[el_W_cand[el_W]] << endl;
+                       if (isEvent) std::cout << "//////////////////////////////////////" << endl;
+		       if (abs(Electron_eta()[el_W_cand[el_W]]) < 1.566 && abs(Electron_eta()[el_W_cand[el_W]]) > 1.444) continue;  // Match Philip
+		       int elW_ID = 0;
+		       elW_ID |= Electron_mvaFall17V2noIso_WPL()[el_W_cand[el_W]] << 0;
+		       elW_ID |= Electron_mvaFall17V2noIso_WP90()[el_W_cand[el_W]] << 1;
+		       elW_ID |= Electron_mvaFall17V2noIso_WP80()[el_W_cand[el_W]] << 2;
+		       elW_ID |= Electron_mvaFall17V2Iso_WPL()[el_W_cand[el_W]] << 3;
+		       elW_ID |= Electron_mvaFall17V2Iso_WP90()[el_W_cand[el_W]] << 4;
+                       elW_ID |= Electron_mvaFall17V2Iso_WP80()[el_W_cand[el_W]] << 5;
+		       
+		       if (isEvent){
+                            std::cout << "Electron mva noIso WPL: " << (Electron_mvaFall17V2noIso_WPL()[el_W_cand[el_W]] << 0) << endl;
+                            std::cout << "Electron mva noIso WP90: " << (Electron_mvaFall17V2noIso_WP90()[el_W_cand[el_W]] << 1) << endl;
+                            std::cout << "Electron mva noIso WP80: " << (Electron_mvaFall17V2noIso_WP80()[el_W_cand[el_W]] << 2) << endl;
+                            std::cout << "Electron mva Iso WPL: " << (Electron_mvaFall17V2Iso_WPL()[el_W_cand[el_W]] << 3) << endl;
+                            std::cout << "Electron mva Iso WP90: " << (Electron_mvaFall17V2Iso_WP90()[el_W_cand[el_W]] << 4) << endl;
+                            std::cout << "Electron mva Iso WP80: " << (Electron_mvaFall17V2Iso_WP80()[el_W_cand[el_W]] << 5) << endl;
+                       }
+
+		       if (isEvent) std::cout << "Electron W cand ID = " << elW_ID << endl;
+		       if (isEvent) std::cout << "//////////////////////////////////////" << endl;
+                       if (not (elW_ID & (1 << 4))) continue;
+		       if (isEvent) std::cout << "Electron W cand ID = " << elW_ID << endl;
+                       if (isEvent) std::cout << "//////////////////////////////////////" << endl; 
+
                        nelW++;
                  }
 		 if (isEvent) std::cout << "nelW = " << nelW << " , number of W cand el's = " << el_W_cand.size() << endl;
@@ -411,12 +497,17 @@ int ScanChain(TChain *ch, TString process, TString year, double xsec, double Gen
 
 	    //double px_l_Z1, py_l_Z1, px_l_Z2, py_l_Z2;
 	    LorentzVector p4_l_Z1, p4_l_Z2;
+	    int pdgid_Z_lep_0 = 0;
+	    int pdgid_Z_lep_1 = 0;
 
 	    if ( Z_mm ){ 
 		 pt_l_Z1 = nt.Muon_pt().at(mu_Z_cand[0]);
 		 p4_l_Z1 = nt.Muon_p4().at(mu_Z_cand[0]);
 		 pt_l_Z2 = nt.Muon_pt().at(mu_Z_cand[1]);
 		 p4_l_Z2 = nt.Muon_p4().at(mu_Z_cand[1]);
+		 pdgid_Z_lep_0 = nt.Muon_pdgId()[mu_Z_cand[0]];
+		 pdgid_Z_lep_1 = nt.Muon_pdgId()[mu_Z_cand[1]];
+		 if (pt_l_Z1 < 25. || pt_l_Z2 < 15.) continue;
 		 mll = (nt.Muon_p4().at(mu_Z_cand[0])+nt.Muon_p4().at(mu_Z_cand[1])).M();
 		 if (isEvent) std::cout << "m_ll = " << mll << " , m_leps = " << m_leps << endl;
             }
@@ -425,6 +516,9 @@ int ScanChain(TChain *ch, TString process, TString year, double xsec, double Gen
                  p4_l_Z1 = nt.Electron_p4().at(el_Z_cand[0]);
 		 pt_l_Z2 = nt.Electron_pt().at(el_Z_cand[1]);
                  p4_l_Z2 = nt.Electron_p4().at(el_Z_cand[1]);
+		 pdgid_Z_lep_0 = nt.Electron_pdgId()[el_Z_cand[0]];
+		 pdgid_Z_lep_1 = nt.Electron_pdgId()[el_Z_cand[1]];
+		 if (pt_l_Z1 < 25. || pt_l_Z2 < 15.) continue;
 		 mll = (nt.Electron_p4().at(el_Z_cand[0])+nt.Electron_p4().at(el_Z_cand[1])).M();
 		 if (isEvent) std::cout << "m_ll = " << mll << " , m_leps = " << m_leps << endl;
 	    }
@@ -449,6 +543,8 @@ int ScanChain(TChain *ch, TString process, TString year, double xsec, double Gen
 
 	    LorentzVector p4_l_W1;
             LorentzVector p4_l_W2;
+	    int idx_l_W1;
+	    int idx_l_W2;
 	    
 	    if (Wee){
 		if (isEvent) std::cout << "WWee" << endl;
@@ -480,14 +576,19 @@ int ScanChain(TChain *ch, TString process, TString year, double xsec, double Gen
 		if (isEvent) std::cout << "Opposite flavor channel!" << endl;
 		if ( Electron_pt()[el_W_cand[0]] > Muon_pt()[mu_W_cand[0]] ){
 		     p4_l_W1 = Electron_p4()[el_W_cand[0]];
+		     idx_l_W1 = Electron_pdgId()[el_W_cand[0]];
 		     p4_l_W2 = Muon_p4()[mu_W_cand[0]];   
+		     idx_l_W2 = Muon_pdgId()[mu_W_cand[0]];
 		}
 		if ( Electron_pt()[el_W_cand[0]] < Muon_pt()[mu_W_cand[0]] ){
 		     p4_l_W2 = Electron_p4()[el_W_cand[0]];
+		     idx_l_W2 = Electron_pdgId()[el_W_cand[0]];
                      p4_l_W1 = Muon_p4()[mu_W_cand[0]];
+		     idx_l_W1 = Muon_pdgId()[mu_W_cand[0]];
 		}
 	    }
 	    //sumW_mu_EventWeights += evt_weight;
+	    
 	    
 	    double m_Wcands = (p4_l_W1+p4_l_W2).M();
 	    if (isEvent){
@@ -614,6 +715,8 @@ int ScanChain(TChain *ch, TString process, TString year, double xsec, double Gen
 		std::cout << "m_Wcands = " << m_Wcands << endl;
 	    }
 	    if ( opp_flav ){
+		 if ( idx_l_W1*idx_l_W2 != -143 ) continue; 
+		 if (isEvent) std::cout << "Passed OF opposite-sign requirement!" << endl;
 		 if ( m_Wcands < 100. && MT2 < 25.) continue;
 		 
 		 if ( m_Wcands < 100. && MT2 > 25.) of_pass = true;
@@ -623,17 +726,74 @@ int ScanChain(TChain *ch, TString process, TString year, double xsec, double Gen
                  }
 	    }
 
+	    // Low mass resonance veto
+	    if ( pdgid_Z_lep_0*pdgid_Z_lep_1 < 0 ){
+		 if (isEvent){
+		     std::cout << "Low mass resonance = " << (p4_l_Z1+p4_l_Z2).M() << endl;
+		 }
+		 if ( (p4_l_Z1+p4_l_Z2).M() < 12. ) continue;
+            }
+	    if ( pdgid_Z_lep_0*idx_l_W1 < 0 ){
+		 if (isEvent){
+                     std::cout << "Low mass resonance = " << (p4_l_Z1+p4_l_W1).M() << endl;
+                 }
+		 if ( (p4_l_Z1+p4_l_W1).M() < 12. ) continue;
+	    } 
+	    if ( pdgid_Z_lep_0*idx_l_W2 < 0 ){
+		 if (isEvent){
+                     std::cout << "Low mass resonance = " << (p4_l_Z1+p4_l_W2).M() << endl;
+                 }
+		 if ( (p4_l_Z1+p4_l_W2).M() < 12. ) continue;
+	    }
+	    if ( pdgid_Z_lep_1*idx_l_W1 < 0 ){
+		 if (isEvent){
+                     std::cout << "Low mass resonance = " << (p4_l_Z2+p4_l_W1).M() << endl;
+                 }
+                 if ( (p4_l_Z2+p4_l_W1).M() < 12. ) continue;
+            }
+            if ( pdgid_Z_lep_1*idx_l_W2 < 0 ){
+		 if (isEvent){
+                     std::cout << "Low mass resonance = " << (p4_l_Z1+p4_l_W2).M() << endl;
+                 }
+                 if ( (p4_l_Z2+p4_l_W2).M() < 12. ) continue;
+            }
+	    if ( idx_l_W1*idx_l_W2 < 0 ){
+		 if (isEvent){
+                     std::cout << "Low mass resonance = " << (p4_l_W1+p4_l_W2).M() << endl;
+                 }
+		 if ( (p4_l_W1+p4_l_W2).M() < 12. ) continue;
+	    }
 	
             //if ( sf_pass ) sum_sf_EventWeights += evt_weight;
 	    if ( of_pass ) sum_of_EventWeights += evt_weight;
 
 	    if (isEvent) std::cout << "Passed full selection!" << endl;
+	    if (isEvent) std::cout << "///////////////////////////////////////////////////////" << endl;
+	    if (isEvent) std::cout << "PRINTING THE EVENT-LEVEL INFORMATION" << endl;
+	    if (isEvent) std::cout << "Leading Z cand pT = " << p4_l_Z1.Pt() << endl;
+	    if (isEvent) std::cout << "Leading Z cand eta = " << p4_l_Z1.Eta() << endl;
+	    if (isEvent) std::cout << "Leading Z cand phi = " << p4_l_Z1.Phi() << endl;
+	    if (isEvent && Z_mm) std::cout << "Leading Z cand pdgId = " << nt.Muon_pdgId()[mu_Z_cand[0]] << endl;
+	    if (isEvent && Z_ee) std::cout << "Leading Z cand pdgId = " << nt.Electron_pdgId()[el_Z_cand[0]] << endl;
+	    if (isEvent) std::cout << "Subleading Z cand pT = " << p4_l_Z2.Pt() << endl;
+            if (isEvent) std::cout << "Subleading Z cand eta = " << p4_l_Z2.Eta() << endl;
+            if (isEvent) std::cout << "Subleading Z cand phi = " << p4_l_Z2.Phi() << endl;
+            if (isEvent && Z_mm) std::cout << "Subleading Z cand pdgId = " << nt.Muon_pdgId()[mu_Z_cand[1]] << endl;
+            if (isEvent && Z_ee) std::cout << "Subleading Z cand pdgId = " << nt.Electron_pdgId()[el_Z_cand[1]] << endl;
+	    if (isEvent) std::cout << "Leading W cand pT = " << p4_l_W1.Pt() << endl;
+            if (isEvent) std::cout << "Leading W cand eta = " << p4_l_W1.Eta() << endl;
+            if (isEvent) std::cout << "Leading W cand phi = " << p4_l_W1.Phi() << endl;
+            if (isEvent) std::cout << "Leading W cand pdgId = " << idx_l_W1 << endl;
+	    if (isEvent) std::cout << "Subleading W cand pT = " << p4_l_W2.Pt() << endl;
+            if (isEvent) std::cout << "Subleading W cand eta = " << p4_l_W2.Eta() << endl;
+            if (isEvent) std::cout << "Subleading W cand phi = " << p4_l_W2.Phi() << endl;
+            if (isEvent) std::cout << "Subleading W cand pdgId = " << idx_l_W2 << endl;
             //float weight = genWeight();
 	    //evt_weight = weight*factor;
 	    sumOfEventWeights += evt_weight;
 	    sumSQEventWeights += std::pow(evt_weight,2.0);
 
-	    std::cout << nt.run() << ":" << nt.luminosityBlock() << ":" << nt.event() << endl;
+	    //std::cout << nt.run() << ":" << nt.luminosityBlock() << ":" << nt.event() << endl;
 
 	    tree_out.Fill();
 
